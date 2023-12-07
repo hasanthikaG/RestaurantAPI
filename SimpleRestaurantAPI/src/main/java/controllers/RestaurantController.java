@@ -2,29 +2,32 @@ package controllers;
 
 import com.sun.net.httpserver.HttpExchange;
 import models.Item;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import static services.RestaurantService.getASingleMenuItem;
+import static controllers.Helper.sendErrorResponse;
+import static controllers.Helper.sendSuccessResponse;
+import static services.RestaurantService.*;
 
 public class RestaurantController {
 
-    /* Handler for the "/api/query-items/{tableNumber}" endpoint */
-     public static Consumer<HttpExchange> handleQueryItems = ((exchange) -> {
-
+    /* Handler for the "/api/query-items/{tableNumber}/{itemId}" endpoint */
+     public static Consumer<HttpExchange> handleGetItems = ((exchange) -> {
         if("GET".equals(exchange.getRequestMethod())){
             String[] pathSegments = exchange.getRequestURI().getPath().split("/");
 
-            if(pathSegments.length > 3) {
+            if(pathSegments.length > 4) {
                 int tableNumber = Integer.parseInt(pathSegments[3]);
-                String response = "Items for the table " + tableNumber + ": [item1, item2, item3]";
+                String itemId = pathSegments[4];
                 try {
-                    UUID fromStringUUID = UUID.fromString("002050ee-1dda-40ac-833d-c3de536287b3");
-                    Item item = getASingleMenuItem(fromStringUUID,1);
+                    UUID fromStringUUID = UUID.fromString(itemId);
+                    Item item = getASingleMenuItem(fromStringUUID,tableNumber);
 
                     String jsonResponse = String.format(
                             "{\"itemId\":\"%s\",\"itemName\":\"%s\",\"itemCookingTime\":\"%s\",\"tableNo\":%d,\"createdAt\":\"%s\",\"removedAt\":\"%s\",\"isRemoved\":%b}",
@@ -50,28 +53,56 @@ public class RestaurantController {
 
 
     /* Handler for the "/api/add-item" endpoint*/
-    private static BiConsumer<HttpExchange, Item> handleAddOrder = (exchange, requestBody) -> {
-        if ("POST".equals(exchange.getRequestMethod())) {
+    public static BiConsumer<HttpExchange, String> handleAddItems = (exchange, item) -> {
+        System.out.println("handleAddItems ");
 
+        if ("POST".equals(exchange.getRequestMethod())) {
+            try {
+                JSONArray jsonArray = new JSONArray(item);
+                System.out.println("jsonArray" + jsonArray);
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject jsnObj = jsonArray.getJSONObject(i);
+                    Item itmObj = new Item(
+                            UUID.randomUUID(),
+                            jsnObj.getString("itemName"),
+                            jsnObj.getString("itemCookingTime"),
+                            jsnObj.getInt("tableNo"),
+                            LocalDateTime.now(),
+                        null,
+                        false
+                    );
+                    String result = AddItems(itmObj);
+                }
+                sendSuccessResponse(exchange, 200, "result");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         } else {
-            sendErrorResponse(exchange, 405); // Method Not Allowed
+            sendErrorResponse(exchange, 405);
         }
     };
 
+    /* Handler for the "/api/remove-item/{tableNumber}/{itemId}" endpoint */
+    public static Consumer<HttpExchange> handleRemoveItems = ((exchange) -> {
+        if("DELETE".equals(exchange.getRequestMethod())){
+            String[] pathSegments = exchange.getRequestURI().getPath().split("/");
 
-    private static void sendSuccessResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
-        exchange.sendResponseHeaders(statusCode, response.length());
-        OutputStream os = exchange.getResponseBody();
-        os.write(response.getBytes());
-        os.close();
-    }
-
-    private static void sendErrorResponse(HttpExchange exchange, int statusCode) {
-        try{
-            exchange.sendResponseHeaders(statusCode,0);
-            exchange.close();
-        }catch (IOException error){
-            error.printStackTrace();
+            if(pathSegments.length > 4) {
+                try {
+                    int tableNumber = Integer.parseInt(pathSegments[3]);
+                    String itemId = pathSegments[4];
+                    UUID fromStringUUID = UUID.fromString(itemId);
+                    String result = RemoveItem(fromStringUUID, tableNumber);
+                    sendSuccessResponse(exchange, 200, result);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                sendErrorResponse(exchange, 400);
+            }
+        }else {
+            sendErrorResponse(exchange, 405);
         }
-    }
+    });
+
 }

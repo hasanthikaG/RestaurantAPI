@@ -1,7 +1,6 @@
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import config.DBConnection;
 import controllers.RestaurantController;
 
 import java.io.IOException;
@@ -11,16 +10,24 @@ import java.util.function.BiConsumer;
 
 public class Main {
     public static void main(String[] args) throws IOException {
-                int port = 8080;
-                HttpServer server = HttpServer.create(new InetSocketAddress(port),0);
+        int port = 8081;
+        HttpServer server = HttpServer.create(new InetSocketAddress(port),0);
 
-                server.createContext("/api/query-items/", createHandler((exchange, _ignored) -> {
-                    RestaurantController.handleQueryItems.accept(exchange);
-                }));
-                server.setExecutor(null);
-                server.start();
+        server.createContext("/api/query-items/", createHandler((exchange, _ignored) -> {
+            RestaurantController.handleGetItems.accept(exchange);
+        }));
 
-                System.out.println("Server started on port " + port);
+        server.createContext("/api/add-item", createHandler((exchange, requestBody) -> {
+            RestaurantController.handleAddItems.accept(exchange,requestBody);
+        }));
+
+        server.createContext("/api/remove-item/", createHandler((exchange, _ignored) -> {
+            RestaurantController.handleRemoveItems.accept(exchange);
+        }));
+
+        server.setExecutor(null);
+        server.start();
+        System.out.println("Server started on port " + port);
     }
 
     private interface RequestHandler extends BiConsumer<HttpExchange,String>{}
