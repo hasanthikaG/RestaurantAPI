@@ -8,7 +8,6 @@ import org.json.JSONObject;
 
 import java.sql.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -27,6 +26,7 @@ public class RestaurantService {
                 preparedStatement.setObject(1, itemId);
                 preparedStatement.setObject(2, tableNo);
                 System.out.println("preparedStatement"  +preparedStatement);
+
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if(resultSet.next()) {
                         UUID fromStringUUID = UUID.fromString(resultSet.getString("itemId"));
@@ -64,6 +64,7 @@ public class RestaurantService {
                     "(\"itemId\", \"itemName\",\"itemCookingTime\",\"tableNo\",\"createdAt\",\"removedAt\",\"isRemoved\")" +
                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
             System.out.println("query" + query);
+
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
                 preparedStatement.setObject(1, item.getItemId());
                 preparedStatement.setObject(2, item.getItemName());
@@ -76,11 +77,13 @@ public class RestaurantService {
                 int rowsAffected = preparedStatement.executeUpdate();
                 if (rowsAffected > 0) {
                     System.out.println("Insertion successful. Rows affected: " + rowsAffected);
+                    return "Insertion successful";
                 } else {
                     System.out.println("Insertion failed.");
+                    return "Insertion failed.";
                 }
             }
-        return "Insertion successful";
+
         }catch (SQLException e){
             e.printStackTrace();
             return null;
@@ -122,16 +125,14 @@ public class RestaurantService {
         try(Connection connection = DBConnection.getDbConnection.get()){
             String query = "select * from \"MenuItems\" where \"tableNo\" = ? and \"isRemoved\" = ?";
             System.out.println("query" + query);
+
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
                 preparedStatement.setObject(1, tableNo);
                 preparedStatement.setObject(2, false);
 
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                    List<Item> itemList =new ArrayList<>();
                     ResultSetMetaData md = resultSet.getMetaData();
                     int numCols = md.getColumnCount();
-
-
 
                     List<String> colNames = IntStream.range(0, numCols)
                             .mapToObj(i -> {
@@ -146,7 +147,6 @@ public class RestaurantService {
 
                     JSONArray result = new JSONArray();
                         while (resultSet.next()) {
-                            System.out.println("INSIDE resultSet.next()");
                             JSONObject row = new JSONObject();
                             colNames.forEach(cn -> {
                                 try {
@@ -156,34 +156,6 @@ public class RestaurantService {
                                 }
                             });
                             result.put(row);
-//                            result.add(row);
-//                            UUID fromStringUUID = UUID.fromString(resultSet.getString("itemId"));
-//
-//                            Date sqlDateCreatedAt = resultSet.getDate("createdAt");
-//                            LocalDateTime localDateTimeCreatedAt = sqlDateCreatedAt.toLocalDate().atStartOfDay();
-//
-//                            Date sqlDateRemovedAt = resultSet.getDate("removedAt");
-//                            LocalDateTime localDateTimeRemovedAt  = sqlDateRemovedAt.toLocalDate().atStartOfDay();
-//
-//                            String itemName = resultSet.getString("itemName");
-//                            String itemCookingTime = resultSet.getString("itemCookingTime");
-//                            Boolean removed = resultSet.getBoolean("isRemoved");
-//
-//                            System.out.println("itemName" + itemName);
-//                            System.out.println("itemCookingTime" + itemCookingTime);
-//                            System.out.println("removed" + removed);
-
-//                            Item newItem = new Item(
-//                                    fromStringUUID,
-//                                    itemName,
-//                                    itemCookingTime,
-//                                    tableNo,
-//                                    localDateTimeCreatedAt,
-//                                    localDateTimeRemovedAt,
-//                                    removed);
-//                            System.out.println("newItem" + newItem);
-//                            itemList.add(newItem);
-//                            System.out.println("itemList" + itemList);
                         }
                         return result;
                 }

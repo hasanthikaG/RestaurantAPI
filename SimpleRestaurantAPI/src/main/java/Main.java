@@ -10,7 +10,8 @@ import java.util.function.BiConsumer;
 
 public class Main {
     public static void main(String[] args) throws IOException {
-        int port = 8081;
+        int port = Integer.parseInt(System.getenv("PORT"));
+        
         HttpServer server = HttpServer.create(new InetSocketAddress(port),0);
 
         server.createContext("/api/get-item/", createHandler((exchange, _ignored) -> {

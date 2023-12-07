@@ -60,10 +60,9 @@ public class RestaurantController {
         if ("POST".equals(exchange.getRequestMethod())) {
             try {
                 JSONArray jsonArray = new JSONArray(item);
-                System.out.println("jsonArray" + jsonArray);
                 for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject jsnObj = jsonArray.getJSONObject(i);
 
+                    JSONObject jsnObj = jsonArray.getJSONObject(i);
                     Random random = new Random();
                     String randomNumber = new String(String.valueOf(random.nextInt(11) + 5));
 
@@ -78,7 +77,8 @@ public class RestaurantController {
                     );
                     String result = AddItems(itmObj);
                 }
-                sendSuccessResponse(exchange, 200, "result");
+
+                sendSuccessResponse(exchange, 200, "Success");
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
