@@ -13,7 +13,7 @@ public class Main {
         int port = 8081;
         HttpServer server = HttpServer.create(new InetSocketAddress(port),0);
 
-        server.createContext("/api/query-items/", createHandler((exchange, _ignored) -> {
+        server.createContext("/api/get-item/", createHandler((exchange, _ignored) -> {
             RestaurantController.handleGetItems.accept(exchange);
         }));
 
@@ -23,6 +23,10 @@ public class Main {
 
         server.createContext("/api/remove-item/", createHandler((exchange, _ignored) -> {
             RestaurantController.handleRemoveItems.accept(exchange);
+        }));
+
+        server.createContext("/api/query-items/", createHandler((exchange, _ignored) -> {
+            RestaurantController.handleQueryItems.accept(exchange);
         }));
 
         server.setExecutor(null);
