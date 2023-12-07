@@ -14,6 +14,7 @@ import java.util.function.Consumer;
 
 import static controllers.Helper.sendErrorResponse;
 import static controllers.Helper.sendSuccessResponse;
+import static controllers.ItemValidator.*;
 import static services.RestaurantService.*;
 
 public class RestaurantController {
@@ -75,7 +76,15 @@ public class RestaurantController {
                         null,
                         false
                     );
-                    String result = AddItems(itmObj);
+                    ItemValidator.ValidationResult result = isItemNameValid()
+                            .and(isTableNumberExist())
+                            .and(isTableNumberValid()).apply(itmObj);
+                    System.out.println(result);
+
+                    if(result != ValidationResult.SUCCESS){
+                        sendSuccessResponse(exchange, 200, result.name());
+                    }
+                    AddItems(itmObj);
                 }
 
                 sendSuccessResponse(exchange, 200, "Success");

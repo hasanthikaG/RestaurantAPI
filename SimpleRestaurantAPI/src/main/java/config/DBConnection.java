@@ -3,6 +3,7 @@ package config;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 public class DBConnection {
@@ -16,11 +17,11 @@ public class DBConnection {
             Connection connection =  DriverManager.getConnection(url,username,password);
             System.out.println("Connection" + connection);
 
-            if(connection != null) {
-                System.out.println("Connected to the PostgresSQL server successfully.");
-            }else {
-                System.out.println("DB Connection is null. Check the console for more details.");
-            }
+            Optional.ofNullable(connection)
+                    .ifPresentOrElse(email ->  System.out.println("Connected to the PostgresSQL server successfully."),
+                            () ->  {
+                                System.out.println("DB Connection is null. Check the console for more details.");
+                            });
             return connection;
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
