@@ -7,6 +7,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.BiConsumer;
@@ -27,24 +28,37 @@ public class RestaurantController {
             if(pathSegments.length > 4) {
                 int tableNumber = Integer.parseInt(pathSegments[3]);
                 String itemId = pathSegments[4];
-                try {
-                    UUID fromStringUUID = UUID.fromString(itemId);
-                    Item item = getASingleMenuItem(fromStringUUID,tableNumber);
-                    System.out.println("item" + item);
-                    String jsonResponse = String.format(
-                            "{\"itemId\":\"%s\",\"itemName\":\"%s\",\"itemCookingTime\":\"%s\",\"tableNo\":%d,\"createdAt\":\"%s\",\"removedAt\":\"%s\",\"isRemoved\":%b}",
-                            item.getItemId(),
-                            item.getItemName(),
-                            item.getItemCookingTime(),
-                            item.getTableNo(),
-                            item.getCreatedAt(),
-                            item.getRemovedAt(),
-                            item.getIsRemoved()
-                    );
-                    sendSuccessResponse(exchange, 200, jsonResponse);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                UUID fromStringUUID = UUID.fromString(itemId);
+
+                Item item = getASingleMenuItem(fromStringUUID,tableNumber);
+                System.out.println("item" + item);
+
+                Optional.ofNullable(item)
+                            .ifPresentOrElse(res -> {
+                                        try {
+                                          String jsonResponse = String.format(
+                                                    "{\"itemId\":\"%s\",\"itemName\":\"%s\",\"itemCookingTime\":\"%s\",\"tableNo\":%d,\"createdAt\":\"%s\",\"removedAt\":\"%s\",\"isRemoved\":%b}",
+                                                  res.getItemId(),
+                                                  res.getItemName(),
+                                                  res.getItemCookingTime(),
+                                                  res.getTableNo(),
+                                                  res.getCreatedAt(),
+                                                  res.getRemovedAt(),
+                                                  res.getIsRemoved()
+                                          );
+                                            sendSuccessResponse(exchange, 200, jsonResponse);
+                                        } catch (IOException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    },
+                                    () -> {
+                                        try {
+                                            sendSuccessResponse(exchange, 200, "NO_DATA");
+                                        } catch (IOException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    });
+
             } else {
                 sendErrorResponse(exchange, 400);
             }
@@ -65,7 +79,7 @@ public class RestaurantController {
 
                     JSONObject jsnObj = jsonArray.getJSONObject(i);
                     Random random = new Random();
-                    String randomNumber = new String(String.valueOf(random.nextInt(11) + 5));
+                    String randomNumber = String.valueOf(random.nextInt(11) + 5);
 
                     Item itmObj = new Item(
                             UUID.randomUUID(),
@@ -102,15 +116,28 @@ public class RestaurantController {
             String[] pathSegments = exchange.getRequestURI().getPath().split("/");
 
             if(pathSegments.length > 4) {
-                try {
-                    int tableNumber = Integer.parseInt(pathSegments[3]);
-                    String itemId = pathSegments[4];
-                    UUID fromStringUUID = UUID.fromString(itemId);
-                    String result = RemoveItem(fromStringUUID, tableNumber);
-                    sendSuccessResponse(exchange, 200, result);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+
+                int tableNumber = Integer.parseInt(pathSegments[3]);
+                String itemId = pathSegments[4];
+                UUID fromStringUUID = UUID.fromString(itemId);
+
+                String result = RemoveItem(fromStringUUID, tableNumber);
+                Optional.ofNullable(result)
+                            .ifPresentOrElse(res -> {
+                                        try {
+                                            sendSuccessResponse(exchange, 200, res);
+                                        } catch (IOException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    },
+                                    () -> {
+                                        try {
+                                            sendSuccessResponse(exchange, 200, "NO_DATA");
+                                        } catch (IOException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    });
+
             } else {
                 sendErrorResponse(exchange, 400);
             }
@@ -126,12 +153,24 @@ public class RestaurantController {
 
             if(pathSegments.length > 3) {
                 int tableNumber = Integer.parseInt(pathSegments[3]);
-                try {
-                    JSONArray itemList = QueryItemsService(tableNumber);
-                    sendSuccessResponse(exchange, 200, itemList.toString());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                JSONArray itemList = QueryItemsService(tableNumber);
+
+                Optional.ofNullable(itemList)
+                            .ifPresentOrElse(res -> {
+                                        try {
+                                            sendSuccessResponse(exchange, 200, res.toString());
+                                        } catch (IOException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    },
+                                    () -> {
+                                        try {
+                                            sendSuccessResponse(exchange, 200, "NO_DATA");
+                                        } catch (IOException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    });
+
             } else {
                 sendErrorResponse(exchange, 400);
             }
